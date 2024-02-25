@@ -1,0 +1,29 @@
+1xx Informational Response: Yêu cầu được nhận và tiếp tục xử lý.
+
+- 100 Continue: Tiếp tục yêu cầu. Một phần hoặc toàn bộ yêu cầu đã được nhận, nhưng vẫn chưa hoàn thành.
+
+2xx Success: Yêu cầu đã được xử lý thành công.
+
+- 200 OK: Yêu cầu đã được xử lý thành công và kết quả được trả về.
+- 201 Created: Yêu cầu đã được tạo mới thành công. Một tài nguyên mới đã được tạo thành công và được trả về.
+- 204 No Content: Yêu cầu đã được xử lý thành công, nhưng không có nội dung để trả về.
+
+3xx Redirection: Yêu cầu đã được chuyển hướng.
+
+- 301 Moved Permanently: Địa chỉ của tài nguyên đã được chuyển hướng vĩnh viễn.
+- 302 Found: Tài nguyên đã được chuyển hướng tạm thời.
+- 304 Not Modified: Yêu cầu đã được chuyển hướng, nhưng tài nguyên không có sự thay đổi.
+
+4xx Client Errors: Lỗi từ phía người dùng.
+
+- 400 Bad Request: Yêu cầu không hợp lệ do lỗi từ phía người dùng.
+- 401 Unauthorized: Người dùng cần phải xác thực để truy cập tài nguyên.
+- 403 Forbidden: Truy cập bị từ chối do hạn chế quyền truy cập.
+- 404 Not Found: Tài nguyên được yêu cầu không tồn tại trên máy chủ.
+- 405 Method Not Allowed: Phương thức yêu cầu không được hỗ trợ cho tài nguyên đã yêu cầu.
+
+5xx Server Errors: Lỗi từ phía máy chủ.
+
+- 500 Internal Server Error: Lỗi nội bộ của máy chủ.
+- 502 Bad Gateway: Một máy chủ cổng (gateway) không hợp lệ đã nhận phản hồi không hợp lệ từ máy chủ khác.
+- 503 Service Unavailable: Dịch vụ không khả dụng, thường do máy chủ quá tải hoặc đang bảo trì.
