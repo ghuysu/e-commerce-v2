@@ -135,12 +135,10 @@ const authenticationv2 = asyncHandler(async (req, res, next) => {
 
     try{
         const decodeUser = JWT.verify(accessToken, keyStore.publicKey)
-        
         if(userId !== decodeUser.userId){
             throw new AuthFailureError("04")
         }
         req.keyStore = keyStore
-        req.refreshToken = refreshToken
         req.user = decodeUser
         
         return next()
