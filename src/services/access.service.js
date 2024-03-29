@@ -26,7 +26,7 @@ const RoleShop = {
 //05: Something wrong - relogin
 class AccessService{
 
-    static handlRefreshTokenV2 = async ({refreshToken, user, keyStore, privateKey}) => {
+    static handlRefreshTokenV2 = async ({refreshToken, user, keyStore}) => {
         /* 
             1. check whether refresh token is used or not
             2. if it does -> decode to get infor -> delete key
@@ -38,22 +38,21 @@ class AccessService{
             8. return data
         */
         const {userId, email} = user;
-
         if(keyStore.refreshTokensUsed.includes(refreshToken)){
             await KeyTokenService.deleteKeyByUserId(userId)
-            throw new ForbiddenError('05')
+            throw new ForbiddenError('Something wrong - relogin')
         }
 
-        if(keyStore.refreshToken !== refreshToken) throw new AuthFailureError("01")
+        if(keyStore.refreshToken !== refreshToken) throw new AuthFailureError("Shop was not registered")
 
         const foundShop = await findByEmail({email})
         if(!foundShop){
-            throw new AuthFailureError('01')
+            throw new AuthFailureError('Shop was not registered')
         }
 
         //create 1 pair token
         const publicKeyObject = crypto.createPublicKey(keyStore.publicKey)
-        const tokens = await createTokenPair({userId: foundShop._id, email}, publicKeyObject, privateKey)
+        const tokens = await createTokenPair({userId: foundShop._id, email}, publicKeyObject, keyStore.privateKey)
 
         //update token
         await KeyTokenService.findAndUpdateByRefreshToken(refreshToken, tokens)
@@ -138,19 +137,17 @@ class AccessService{
         */
 
         // check email in dbs
-        console.log(email, password)
         const foundShop = await findByEmail({email})
 
         if(!foundShop){
-            throw new BadRequestError("01")
+            throw new BadRequestError("Shop was not registered")
         }
 
         //match password
-        const match = bcrypt.compare(password, foundShop.password)
-
+        const match = await bcrypt.compare(password, foundShop.password)
         if(!match)
         {
-            throw new AuthFailureError("02")
+            throw new AuthFailureError("Incorrect password")
         }
 
         //create accesstoken, refreshtoken - save
@@ -176,13 +173,13 @@ class AccessService{
         await KeyTokenService.createKeyToken({
             userId: foundShop._id,
             publicKey: publicKey,
+            privateKey: privateKey,
             refreshToken: tokens.refreshToken
         })
 
         return {
             shop: getInfoData({fields: ["_id", 'name', 'email'], object: foundShop}),
-            tokens,
-            privateKey
+            tokens
         }
     }
 
@@ -200,7 +197,7 @@ class AccessService{
         //check email exist
         const shop = await shopModel.findOne({email: email}).lean();
         if(shop){
-            throw new BadRequestError('04')
+            throw new BadRequestError('Shop already registered')
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -238,11 +235,12 @@ class AccessService{
             const publicKeyString = await KeyTokenService.createKeyToken({
                 userId: newShop._id,
                 publicKey: publicKey,
+                privateKey: privateKey,
                 refreshToken: tokens.refreshToken
             })
 
             if(!publicKeyString){
-                throw new BadRequestError('03')
+                throw new BadRequestError('Internal server error')
             }
             console.log("publicKeyString::", publicKeyString)
             
@@ -250,8 +248,7 @@ class AccessService{
             
             return {
                     shop: getInfoData({fields: ['_id', 'name', 'email'], object: newShop}),
-                    tokens,
-                    privateKey
+                    tokens
                 }
         }
     }

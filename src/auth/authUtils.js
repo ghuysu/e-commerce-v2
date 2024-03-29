@@ -4,7 +4,7 @@ const JWT = require("jsonwebtoken")
 const { asyncHandler } = require("../helpers/asyncHandler")
 const { AuthFailureError, NotFoundError } = require("../core/error.response")
 const { findByUserId } = require("../services/keyToken.service")
-
+const crypto = require('crypto')
 const HEADER = {
     API_KEY: 'x-api-key',
     AUTHORIZATION: 'authorization',
@@ -20,7 +20,7 @@ const HEADER = {
 
 const createTokenPair = async (payload, publicKey, privateKey) => {
     try{
-        console.log(privateKey, publicKey)
+        console.log({privateKey, publicKey})
         //accessToken
         const accessToken = await JWT.sign(payload, privateKey, {
             algorithm: "RS256",
@@ -45,7 +45,7 @@ const createTokenPair = async (payload, publicKey, privateKey) => {
             refreshToken
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
@@ -61,24 +61,24 @@ const authentication = asyncHandler(async (req, res, next) => {
 
     const userId = req.headers[HEADER.CLIENT_ID]
     if(!userId){
-        throw new AuthFailureError("01")
+        throw new AuthFailureError("Invalid request (missing header userId)")
     }
 
     const keyStore = await findByUserId(userId);
     if(!keyStore){
-        throw new NotFoundError("02")
+        throw new NotFoundError("Not Found key store")
     }
     
     const accessToken = req.headers[HEADER.AUTHORIZATION]
     if(!accessToken){
-        throw new AuthFailureError("03")
+        throw new AuthFailureError("Invalid request (missing header accessToken)")
     }
 
     try{
         const decodeUser = JWT.verify(accessToken, keyStore.publicKey)
         
         if(userId !== decodeUser.userId){
-            throw new AuthFailureError("04")
+            throw new AuthFailureError("Invalid request(wrong userId in decode)")
         }
         req.user = decodeUser
         
@@ -102,7 +102,7 @@ const authenticationv2 = asyncHandler(async (req, res, next) => {
     //1
     const userId = req.headers[HEADER.CLIENT_ID]
     if(!userId){
-        throw new AuthFailureError("01")
+        throw new AuthFailureError("Invalid request (missing header userId)")
     }
 
     //2

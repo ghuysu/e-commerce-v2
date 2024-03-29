@@ -9,47 +9,22 @@ const COLLECTION_NAME = 'Products'
 
 //sửa dụng polymorphic pattern
 var productSchema = new Schema({
-    product_name:{
-        type:String,
-        required:true
-    },
-    product_thumb:{
-        type: String,
-        required: true
-    },
+    product_name:{type:String, required:true},
+    product_thumb:{type: String, required: true},
     product_description: String,
     product_slug: String,
-    product_price: {
-        type: Number,
-        required: true
-    },
-    product_quantity: {
-        type: Number,
-        required: true
-    },
-    product_type: {
-        type: String,
-        required: true,
-        enum: ['Electronic', 'Clothing']
-    },
-    product_shop: {
-        type: Schema.Types.ObjectId,
-        ref: 'Shop'
-    },
-    product_attributes: {
-        type: Schema.Types.Mixed,
-        required: true
-    },
+    product_price: {type: Number, required: true},
+    product_quantity: {type: Number, required: true},
+    product_type: {type: String, required: true, enum: ['Electronic', 'Clothing']},
+    product_shop: {type: Schema.Types.ObjectId, ref: 'Shop'},
+    product_attributes: {type: Schema.Types.Mixed, required: true},
     product_ratingAverage : {
         type:Number,
         min: [1, 'Rating must be abouve 1.0'],
         max: [5, 'Rating must be about 5.0'],
         set: (val) => Math.round(val * 10) /10
     },
-    product_variation: {
-        type: Array,
-        default: []
-    },
+    product_variation: {type: Array, default: []},
     isDraft: {
         type: Boolean,
         default: true,
