@@ -54,7 +54,7 @@ class ProductFactory{
 
     static async findAllProducts({limit = 50, sort = 'ctime', page = 1, filter = {isPublished: true}}, select){
         return await findAllProducts({limit, sort, page, filter, select: 
-            ['product_name', 'product_price', 'product_thumb']})
+            ['product_name', 'product_price', 'product_thumb', 'product_shop']})
     }
 
     static async findProduct({product_id}){
@@ -78,7 +78,7 @@ class Product{
         this.product_attributes = product_attributes
     }
 
-    async createProduct(product_id){
+    async createProduct(product_id, location){
         const newProduct = await product.create({
             ...this,
             _id: product_id
@@ -88,7 +88,8 @@ class Product{
             await insertInventory({
                 productId: product_id,
                 shopId: this.product_shop,
-                stock: this.product_quantity
+                stock: this.product_quantity,
+                location: location ? location : 'Unknown'
             })
         }
 
