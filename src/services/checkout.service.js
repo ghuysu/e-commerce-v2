@@ -112,7 +112,6 @@ class CheckoutService{
                 await releaseLock(keyLock)
             }
         }
-        console.log(acquireProduct)
         if(acquireProduct.includes(false)){
             throw new BadRequestError('Some products have been sold out, Please re-check your cart')
         }
