@@ -4,6 +4,9 @@ const { default: mongoose } = require("mongoose")
 const { getSelectData, unGetSelectData } = require("../../utils")
 const {product, electronic, clothing} = require("../product.model")
 const {ObjectId} = require("mongoose").Types
+const {addStockToInventory} = require("../../services/inventory.service")
+const { getInventoryByShopAndProductId } = require("./inventory.repo")
+
 
 const queryProduct = async({query, limit, skip}) => {
     return await product.find(query)
@@ -82,7 +85,7 @@ const updateProductById = async ({
     payload,
     model,
     isNew = true
-}) => {
+}) => { 
     return await model.findByIdAndUpdate(product_id, payload, {
         new: isNew
     })

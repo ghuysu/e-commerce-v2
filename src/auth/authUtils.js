@@ -120,7 +120,6 @@ const authenticationv2 = asyncHandler(async (req, res, next) => {
             req.keyStore = keyStore
             req.refreshToken = refreshToken
             req.user = decodeUser
-            console.log({keyStore: req.keyStore, rt: req.refreshToken, user: req.user})
             return next()
         } catch(error){
             throw error
@@ -140,7 +139,7 @@ const authenticationv2 = asyncHandler(async (req, res, next) => {
         }
         req.keyStore = keyStore
         req.user = decodeUser
-        
+        req.accessToken = accessToken
         return next()
     } catch(error){
         throw error

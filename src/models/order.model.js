@@ -24,7 +24,11 @@ const orderSchema = new Schema({
         country
     }
     */
-    order_payment: {type: Object, default: {}},
+    order_payment: {
+        type: Object, 
+        default: 'cash',
+        enum: ['cod', 'visa', 'credit']
+    },
     order_products: {type: Array, required: true},
     order_trackingNumber: {type: Object, defalut: {}},
     order_status: {

@@ -2,11 +2,14 @@
 
 const cart = require("../models/cart.model")
 const {BadRequestError, NotFoundError} = require("../core/error.response")
-const { findCartByID } = require("../models/repositories/cart.repo")
+const { findCartByID , findCartByUserId} = require("../models/repositories/cart.repo")
 const { checkProductByServer } = require("../models/repositories/product.repo")
 const {getDiscountAmount} = require("./discount.service")
 const { acquireLock, releaseLock } = require("./redis.service")
+const {deleteUserCart} = require("./cart.service")
 const { order } = require("../models/order.model")
+const { addStockToInventory } = require("./inventory.service")
+const { product } = require("../models/product.model")
 class CheckoutService{
     /* 
         {
@@ -35,8 +38,8 @@ class CheckoutService{
         } 
     */
 
-    static async checkoutReview({cartId, userId, shop_order_ids = []}){
-        const foundCart = await findCartByID(cartId)
+    static async checkoutReview({userId, shop_order_ids = []}){
+        const foundCart = await findCartByUserId(userId)
         if(!foundCart) throw new BadRequestError(`Cart Doesn't Exist`)
 
         const checkout_order = {
@@ -92,22 +95,24 @@ class CheckoutService{
         }
     }
 
-    static async orderByUser({shop_order_ids, cartId, userId, user_address={}, user_payment={}}){
-        const {shop_order_ids_new, checkout_order } = await this.checkoutReview({cartId, userId, shop_order_ids})
+    static async orderByUser({shop_order_ids, userId, user_address, user_payment}){
+        const foundCart = findCartByUserId(userId)
+        if(!foundCart) throw new NotFoundError('Not Found Cart')
+        
+        const {shop_order_ids_new, checkout_order } = await this.checkoutReview({cartId: foundCart._id, userId, shop_order_ids})
 
         const products = shop_order_ids_new.flatMap(order => order.item_products)
-        console.log("[1]::", products)
 
         const acquireProduct = []
         for(let i = 0; i < products.length; i++){
             const  {productId, product_quantity} = products[i]
-            const keyLock = await acquireLock(productId, product_quantity, cartId)
+            const keyLock = await acquireLock(productId, product_quantity, foundCart._id)
             acquireProduct.push(keyLock ? true : false)
             if(keyLock){
-                await realease(keyLock)
+                await releaseLock(keyLock)
             }
         }
-
+        console.log(acquireProduct)
         if(acquireProduct.includes(false)){
             throw new BadRequestError('Some products have been sold out, Please re-check your cart')
         }
@@ -116,12 +121,16 @@ class CheckoutService{
             order_userId: userId,
             order_checkout: checkout_order,
             order_shipping: user_address,
-            order_payment: user_payment,
+            order_payment: user_payment ? user_payment : 'cod',
             order_products: shop_order_ids_new
         })
 
         if(newOrder){
-
+            shop_order_ids_new.map(item => {
+                item.item_products.map(i => {
+                    deleteUserCart(userId, i.productId)
+                })
+            })
         }
 
         return newOrder

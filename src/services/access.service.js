@@ -9,15 +9,6 @@ const { getInfoData } = require("../utils")
 const { BadRequestError, AuthFailureError, ForbiddenError } = require("../core/error.response")
 const {findByEmail} = require("../services/shop.service")
 const keytokenModel = require("../models/keytoken.model")
-//001: writer
-//002: editor
-//003: admin
-const RoleShop = {
-    SHOP: "shop",
-    WRITER: "001",
-    EDITOR: "002",
-    ADMIN: "003"
-}
 
 //01: Shop was not registered
 //02: Incorrect password
@@ -37,7 +28,7 @@ class AccessService{
             7. update refresh token
             8. return data
         */
-        const {userId, email} = user;
+        const {userId, email, location} = user;
         if(keyStore.refreshTokensUsed.includes(refreshToken)){
             await KeyTokenService.deleteKeyByUserId(userId)
             throw new ForbiddenError('Something wrong - relogin')
@@ -52,7 +43,7 @@ class AccessService{
 
         //create 1 pair token
         const publicKeyObject = crypto.createPublicKey(keyStore.publicKey)
-        const tokens = await createTokenPair({userId: foundShop._id, email}, publicKeyObject, keyStore.privateKey)
+        const tokens = await createTokenPair({userId: foundShop._id, email, location}, publicKeyObject, keyStore.privateKey)
 
         //update token
         await KeyTokenService.findAndUpdateByRefreshToken(refreshToken, tokens)
@@ -79,8 +70,8 @@ class AccessService{
         
         if(foundToken){
             //decode to get infor
-            const {userId, email} = await verifyJWT(refreshToken, foundToken.publicKey)
-            console.log({userId, email})
+            const {userId, email, location} = await verifyJWT(refreshToken, foundToken.publicKey)
+            console.log({userId, email, location})
 
             //delete key
             await KeyTokenService.deleteKeyByUserId(userId)
@@ -93,8 +84,8 @@ class AccessService{
         }
 
         //verifyToken
-        const {userId, email} = await verifyJWT(refreshToken, holdToken.publicKey)
-        console.log("[2] ", {userId, email})
+        const {userId, email, location} = await verifyJWT(refreshToken, holdToken.publicKey)
+        console.log("[2] ", {userId, email, location})
 
         //checkShop
         const foundShop = await findByEmail({email})
@@ -104,7 +95,7 @@ class AccessService{
 
         //create 1 pair token
         const publicKeyObject = crypto.createPublicKey(holdToken.publicKey)
-        const tokens = await createTokenPair({userId: foundShop._id, email}, publicKeyObject, privateKey)
+        const tokens = await createTokenPair({userId: foundShop._id, email, location}, publicKeyObject, privateKey)
 
         //update token
         await KeyTokenService.findAndUpdateByRefreshToken(refreshToken, tokens)
@@ -112,7 +103,8 @@ class AccessService{
         return {
             user: {
                 userId,
-                email
+                email,
+                location
             },
             tokens
         }
@@ -135,7 +127,6 @@ class AccessService{
             6. save data into db
             7. return data
         */
-
         // check email in dbs
         const foundShop = await findByEmail({email})
 
@@ -162,13 +153,11 @@ class AccessService{
                 format: 'pem'
             }
         })
-
-        console.log({privateKey, publicKey})
         
         //generate tokens
         const publicKeyObject = crypto.createPublicKey(publicKey)
 
-        const tokens = await createTokenPair({userId: foundShop._id, email}, publicKeyObject, privateKey)
+        const tokens = await createTokenPair({userId: foundShop._id, email, location: foundShop.location}, publicKeyObject, privateKey)
         
         await KeyTokenService.createKeyToken({
             userId: foundShop._id,
@@ -178,12 +167,12 @@ class AccessService{
         })
 
         return {
-            shop: getInfoData({fields: ["_id", 'name', 'email'], object: foundShop}),
+            shop: getInfoData({fields: ["_id", 'name', 'email', 'location'], object: foundShop}),
             tokens
         }
     }
 
-    static signUp = async ({name, email, password}) => {
+    static signUp = async ({name, email, password, location}) => {
     /* 
         1. check email exist
         2. hash password
@@ -205,8 +194,8 @@ class AccessService{
         const newShop = await shopModel.create({
             name: name,
             email: email, 
-            password: hashedPassword, 
-            roles: RoleShop.SHOP
+            password: hashedPassword,
+            location: location
         })
 
         if(newShop){
@@ -229,7 +218,7 @@ class AccessService{
             console.log(publicKeyObject)
 
             //created token pair
-            const tokens = await createTokenPair({userId: newShop._id, email}, publicKeyObject, privateKey)
+            const tokens = await createTokenPair({userId: newShop._id, email, location}, publicKeyObject, privateKey)
             console.log("Created Token Successfully::", tokens)
 
             const publicKeyString = await KeyTokenService.createKeyToken({
@@ -244,10 +233,10 @@ class AccessService{
             }
             console.log("publicKeyString::", publicKeyString)
             
-            console.log(await getInfoData({fields: ['_id', 'name', 'email'], object: newShop}))
+            console.log(await getInfoData({fields: ['_id', 'name', 'email', 'location'], object: newShop}))
             
             return {
-                    shop: getInfoData({fields: ['_id', 'name', 'email'], object: newShop}),
+                    shop: getInfoData({fields: ['_id', 'name', 'email', 'location'], object: newShop}),
                     tokens
                 }
         }

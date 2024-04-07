@@ -12,7 +12,12 @@ const findCartByID = async (cartId) => {
     return await cart.findOne({_id: cartId, cart_state: 'active'}).lean()
 }
 
+const findCartByUserId = async (userId) => {
+    return await cart.findOne({cart_userId: userId, cart_state: 'active'}).lean()
+}
+
 module.exports = {
     findProductInCartByProductId,
-    findCartByID
+    findCartByID,
+    findCartByUserId
 }

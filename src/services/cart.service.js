@@ -3,6 +3,8 @@
 const mongoose = require('mongoose');
 const { BadRequestError, NotFoundError } = require('../core/error.response');
 const { cart } = require('../models/cart.model');
+const {inventory} = require('../models/inventory.model')
+const {getInventoryByProductId} = require('../models/repositories/inventory.repo')
 const { getProductById } = require('../models/repositories/product.repo');
 const { findProductInCartByProductId } = require('../models/repositories/cart.repo');
 
@@ -13,6 +15,9 @@ class CartService {
         const updateOrInsert = {
             $addToSet: {
                 cart_products: product
+            },
+            $inc: {
+                cart_count_product: +product.quantity
             }
         };
         
@@ -22,6 +27,12 @@ class CartService {
     }
 
     static async updateUserCartQuantity({ userId, product }) {
+        
+        const foundInventory = await getInventoryByProductId({productId: product.productId})
+        if(!foundInventory) throw new BadRequestError("No Inventory Found")
+
+        if(foundInventory.inven_stock < product.quantity) throw new BadRequestError("Over Product Stock")
+        
         const query = {
             cart_userId: userId,
             'cart_products.productId': product.productId,
@@ -29,7 +40,7 @@ class CartService {
         };
         
         const updateSet = {
-            $inc: {
+            $set: {
                 'cart_products.$.quantity': +product.quantity
             }
         };
@@ -39,12 +50,15 @@ class CartService {
         return await cart.findOneAndUpdate(query, updateSet, options);
     }
 
-    static async addToCart({ userId, product = {} }) {
+    static async addToCart({ userId, product}) {
         const userCart = await cart.findOne({ cart_userId: userId });
         
         if (!userCart) {
             return await CartService.createUserCart(userId, product);
         }
+
+        const foundProduct = await getProductById(product.productId);
+        if (!foundProduct) throw new NotFoundError('Not Found Product');
 
         const existedProdIndex = userCart.cart_products.findIndex(prod => prod.productId === product.productId);
         
@@ -59,9 +73,9 @@ class CartService {
     }
 
     static async addToCartV2({ userId, product = {} }) {
-        const { productId, quantity, old_quantity } = product;
+        const { productId, quantity} = product;
 
-        const foundProduct = await getProductById(productId);
+        const foundProduct = await getProductById(product.productId);
         if (!foundProduct) throw new NotFoundError('Not Found Product');
 
         const productInCart = await findProductInCartByProductId(userId, product.productId)
@@ -79,7 +93,7 @@ class CartService {
             userId,
             product: {
                 productId,
-                quantity: +quantity - +old_quantity
+                quantity: quantity
             }
         });
     }

@@ -21,8 +21,11 @@ class ProductController{
             message: 'Created Product successfully',
             metadata: await ProductService.createProduct(req.body.product_type, {
                 ...req.body,
-                product_shop: req.user.userId
-            })
+                product_shop: req.user.userId,
+            },
+            req.body.location,
+            req.user
+            )
         }).send(res)
     }
 

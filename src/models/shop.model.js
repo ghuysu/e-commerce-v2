@@ -26,14 +26,28 @@ var shopSchema = new Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
-    vetify: {
+    verify: {
         type: Schema.Types.Boolean,
         default: true
     },
-    roles: {
-        type: Array,
-        default: []
-    }
+    location: {
+        type: {
+          country: { type: String },
+          state: { type: String },
+          street: { type: String },
+          detail_description: { type: String }
+        },
+        required: true,
+        _id: false
+      }
+    /*
+        {
+            country
+            state,
+            street,
+            detail_description
+        }
+    */
 }, {
     timestamps: true,
     collection: COLLECTION_NAME

@@ -16,11 +16,11 @@ class ProductFactory{
         ProductFactory.productRegistry[type] = classRef
     }
 
-    static async createProduct(type, payload){
+    static async createProduct(type, payload, location, user){
         const productClass = ProductFactory.productRegistry[type]
         if(!productClass) throw new BadRequestError(`Invalid Product Type ${type}`)
 
-        return new productClass(payload).createProduct()
+        return new productClass(payload).createProduct(location, user)
     }
 
     static async updateProduct(type, payload, product_id){
@@ -78,22 +78,28 @@ class Product{
         this.product_attributes = product_attributes
     }
 
-    async createProduct(product_id, location){
+    async createProduct(product_id, location, user){
         const newProduct = await product.create({
             ...this,
             _id: product_id
         })
 
         if(newProduct){
-            await insertInventory({
+            const shop_location = `${user.street}, ${user.state}, ${user.country}` 
+            const product_inventory = await insertInventory({
                 productId: product_id,
                 shopId: this.product_shop,
                 stock: this.product_quantity,
-                location: location ? location : 'Unknown'
+                location: location ? location : shop_location
             })
-        }
 
-        return newProduct
+            return {
+                newProduct,
+                product_inventory
+            }
+        }
+        throw new BadRequestError("Create Product Failed")
+       
     }
 
     async updateProduct(product_id, payload){
@@ -104,14 +110,14 @@ class Product{
 //define sub-class for difference product types Clothing
 class Clothing extends Product{
 
-    async createProduct(){
+    async createProduct(location, user){
         const newClothing = await clothing.create({
             ...this.product_attributes,
             product_shop: this.product_shop
         })
         if(!newClothing) throw BadRequestError("Create Clothing Failed")
 
-        const newProduct = await super.createProduct(newClothing._id)
+        const newProduct = await super.createProduct(newClothing._id, location, user)
         if(!newProduct) throw BadRequestError("Create Product Error")
 
         return newProduct
@@ -137,14 +143,14 @@ class Clothing extends Product{
 //define sub-class for difference product types Clothing
 class Electronic extends Product{
 
-    async createProduct(){
+    async createProduct(location, user){
         const newElectronic = await electronic.create({
             ...this.product_attributes,
             product_shop: this.product_shop
         })
         if(!newElectronic) throw BadRequestError("Create Electronic Failed")
 
-        const newProduct = await super.createProduct(newElectronic._id)
+        const newProduct = await super.createProduct(newElectronic._id, location, user)
         if(!newProduct) throw BadRequestError("Create Product Error")
 
         return newProduct

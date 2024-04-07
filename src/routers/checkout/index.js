@@ -9,6 +9,7 @@ const {authenticationv2} = require("../../auth/authUtils")
 router.use(authenticationv2)
 
 router.post('/review', asyncHandler(CheckoutController.checkoutReview))
+router.post('/order', asyncHandler(CheckoutController.orderByUser))
 
 module.exports = router
 

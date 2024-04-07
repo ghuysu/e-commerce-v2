@@ -2,17 +2,16 @@
 
 const { BadRequestError } = require("../core/error.response")
 const {inventory} = require("../models/inventory.model")
+const {product} = require("../models/product.model")
 const { getInventoryByShopAndProductId } = require("../models/repositories/inventory.repo")
 const { getProductById } = require("../models/repositories/product.repo")
 
 class InventoryService{
     static async addStockToInventory({stock, productId, shopId, location}){
-        const product = await getProductById(productId)
-
-        if(!product) throw new BadRequestError('Not Found Product')
+        console.log({stock, productId, shopId, location})
 
         let foundInventory = await getInventoryByShopAndProductId({productId, shopId})
-        if(!inventory) throw new BadRequestError('Not Found Inventory')
+        if(!foundInventory) throw new BadRequestError('Not Found Inventory')
 
         foundInventory.inven_stock += +stock
 

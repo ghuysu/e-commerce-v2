@@ -1,45 +1,62 @@
-'use strict'
+"use strict";
 
-const redis = require('redis')
-const redisClient = redis.createClient()
-const {promisify} = require("util")
-const {reservationInventory} = require("../models/repositories/inventory.repo")
+const redis = require("redis");
+const {
+  reservationInventory,
+} = require("../models/repositories/inventory.repo");
 
-const pexpire = promisify(redisClient.pExpire).bind(redisClient);
-const setnxAsync = promisify(redisClient.setNX).bind(redisClient)
+const redisClient = redis.createClient({
+  url: "redis://your-redis-host:6379",
+});
 
+redisClient.on("error", (err) => {
+  console.error("Redis error:", err);
+});
 
-const acquireLock = async(productId, quantity, cartId) => {
-    const key = `lock_v2024_${productId}`
-    const retryTimes = 10
-    const expireTime = 3000
+redisClient.on("end", () => {
+  console.log("Redis client disconnected");
+});
 
-    for(let i = 0; i < retryTimes; i++){
-        const result = await setnxAsync(key)
-        console.log(`result::`, result)
+const acquireLock = async (productId, quantity, cartId) => {
+  const key = `lock_v2024_${productId}`;
+  const retryTimes = 10;
+  const expireTime = 3000;
+
+  for (let i = 0; i < retryTimes; i++) {
+    try {
+        const result = await redisClient.setNX(key, expireTime);
         
-        if(result === 1){
+        if (result === 1) {
+            console.log("///////////////////////////////////////////////////////")
             const isRevervation = await reservationInventory({
-                productId, quantity, cartId
-            })
-            if(isRevervation.modifiedCount){
-                await pexpire(key, expireTime)
-                return key
-            }
-            return null
-        }
-        else{
-            await new Promise((resolve) => setTimeout(resolve, 50))
-        }
-    }
-}
+            productId,
+            quantity,
+            cartId,
+            });
 
-const releaseLock = async (keyLock)=> {
-    const delAsyncKey = promisify(redisClient.del).bind(redisClient)
-    return delAsyncKey
-}
+            console.log({ isReservation: isRevervation });
+
+            if (isRevervation.modifiedCount) {
+            await redisClient.pExpire(key, expireTime);
+            return key;
+            }
+
+            return null;
+      } else {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    } catch (err) {
+        console.error("Error acquiring lock:", err);
+        return null;
+    }
+  }
+};
+
+const releaseLock = async (keyLock) => {
+  return redisClient.del(keyLock);
+};
 
 module.exports = {
-    acquireLock,
-    releaseLock
-}
+  acquireLock,
+  releaseLock,
+};
