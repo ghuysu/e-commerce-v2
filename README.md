@@ -1,7 +1,7 @@
 # E COMMERCE v2
 
 ## Objective
-Khi tôi xem lại dự án e commerce v1 mà mình làm, tôi cảm thấy tôi cần phải làm gì đó để cải thiệt logic của một số chức năng mà mình đã làm và chưa làm, và đó là lí do dự án này ra đời.
+When reviewing the previous version of the e-commerce project (v1), I realized the need to improve the logic and functionality of certain features. This led to the creation of this new version (v2) to enhance the overall system and address the identified areas for improvement.
 
 ## Technologies Used
 - **Node.js**: Server-side JavaScript runtime for building scalable applications.
